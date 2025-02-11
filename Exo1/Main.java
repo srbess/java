@@ -13,7 +13,9 @@ public class Main {
 
         voiture.demarrer();
         voiture.freiner();
+        
         voiture.freiner()
+    
         
         scanner.close();
 
