@@ -1,0 +1,234 @@
+package com.monprojet;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+
+
+public class GestionUtilisateur {
+
+    // Méthode pour ajouter un utilisateur
+   public void add(Connexion connect, Scanner sc) {
+    sc.nextLine(); // Consomme le retour à la ligne laissé par nextInt/nextLine précédent
+    System.out.println("Nom de l'utilisateur : ");
+    String lastName = sc.nextLine();
+
+    System.out.println("Prénom de l'utilisateur : ");
+    String firstName = sc.nextLine();
+
+    System.out.println("Email de l'utilisateur : ");
+    String email = sc.nextLine();
+
+    // Utilisation des timestamps automatiques de MySQL pour createdAt et updatedAt
+    try {
+        String sqlInsert = "INSERT INTO utilisateurs (prenom, nom, email) VALUES (?, ?, ?)";
+        PreparedStatement pstmtInsert = connect.connexion.prepareStatement(sqlInsert);
+        pstmtInsert.setString(1, firstName);
+        pstmtInsert.setString(2, lastName);
+        pstmtInsert.setString(3, email);
+
+        int rowsAffected = pstmtInsert.executeUpdate();
+        System.out.println("Insertion réussie, lignes affectées : " + rowsAffected);
+    } catch (SQLException e) {
+        System.err.println("Erreur SQL lors de l'insertion !");
+        e.printStackTrace();  // Affiche l'erreur exacte pour un meilleur débogage
+    }
+}
+
+
+    // Méthode pour supprimer un utilisateur
+    public void delete(Connexion connect, Scanner sc) {
+        System.out.println("Entrez l'ID de l'utilisateur à supprimer :");
+        int userId = sc.nextInt();
+
+        try {
+            String sqlDelete = "DELETE FROM utilisateurs WHERE id = ?";
+            PreparedStatement pstmtDelete = connect.connexion.prepareStatement(sqlDelete);
+            pstmtDelete.setInt(1, userId);
+
+            int rowsAffected = pstmtDelete.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Utilisateur supprimé avec succès !");
+            } else {
+                System.out.println("Aucun utilisateur trouvé avec cet ID.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL : " + e.getMessage());
+        }
+    }
+
+    // Méthode pour lister tous les utilisateurs
+    public void list(Connexion connect) {
+        try {
+            String sqlSelect = "SELECT id, nom, prenom, email FROM utilisateurs";
+            Statement stmt = connect.connexion.createStatement();
+            ResultSet rs = stmt.executeQuery(sqlSelect);
+
+            System.out.println("Liste des utilisateurs :");
+            System.out.println("ID\tNom\tPrénom\tEmail");
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String nom = rs.getString("nom");
+                String prenom = rs.getString("prenom");
+                String email = rs.getString("email");
+
+                System.out.println(id + "\t" + nom + "\t" + prenom + "\t" + email);
+            }
+            rs.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL : " + e.getMessage());
+        }
+    }
+
+    // Méthode pour mettre à jour un utilisateur
+    public void update(Connexion connect, Scanner sc) {
+        System.out.println("Entrez l'ID de l'utilisateur à modifier :");
+        int userId = sc.nextInt();
+        sc.nextLine(); // Consomme le retour à la ligne
+
+        try {
+            String sqlCheck = "SELECT * FROM utilisateurs WHERE id = ?";
+            PreparedStatement pstmtCheck = connect.connexion.prepareStatement(sqlCheck);
+            pstmtCheck.setInt(1, userId);
+            ResultSet rs = pstmtCheck.executeQuery();
+
+            if (rs.next()) {
+                System.out.println("Utilisateur trouvé :");
+                System.out.println("Prénom actuel : " + rs.getString("prenom"));
+                System.out.println("Nom actuel : " + rs.getString("nom"));
+                System.out.println("Email actuel : " + rs.getString("email"));
+
+                System.out.print("Nouveau prénom (laisser vide pour conserver l'ancien) : ");
+                String newPrenom = sc.nextLine();
+                if (newPrenom.isEmpty()) {
+                    newPrenom = rs.getString("prenom");
+                }
+
+                System.out.print("Nouveau nom (laisser vide pour conserver l'ancien) : ");
+                String newNom = sc.nextLine();
+                if (newNom.isEmpty()) {
+                    newNom = rs.getString("nom");
+                }
+
+                System.out.print("Nouvel email (laisser vide pour conserver l'ancien) : ");
+                String newEmail = sc.nextLine();
+                if (newEmail.isEmpty()) {
+                    newEmail = rs.getString("email");
+                }
+
+                String sqlUpdate = "UPDATE utilisateurs SET prenom = ?, nom = ?, email = ? WHERE id = ?";
+                PreparedStatement pstmtUpdate = connect.connexion.prepareStatement(sqlUpdate);
+                pstmtUpdate.setString(1, newPrenom);
+                pstmtUpdate.setString(2, newNom);
+                pstmtUpdate.setString(3, newEmail);
+                pstmtUpdate.setInt(4, userId);
+
+                int rowsAffected = pstmtUpdate.executeUpdate();
+                if (rowsAffected > 0) {
+                    System.out.println("Mise à jour réussie !");
+                } else {
+                    System.out.println("Échec de la mise à jour.");
+                }
+
+                pstmtUpdate.close();
+            } else {
+                System.out.println("Aucun utilisateur trouvé avec cet ID.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL : " + e.getMessage());
+        }
+    }
+
+    // Méthode pour rechercher un utilisateur
+    public void search(Connexion connect, Scanner sc) {
+        System.out.println("Voulez-vous rechercher par ID, Email ou Nom ?");
+        System.out.println("1 - Par ID");
+        System.out.println("2 - Par Email");
+        System.out.println("3 - Par Nom");
+        int choixRecherche = sc.nextInt();
+        sc.nextLine();  // Consomme le retour à la ligne
+
+        String sqlSelect = "";
+        PreparedStatement pstmt = null;
+
+        try {
+            if (choixRecherche == 1) {
+                System.out.println("Entrez l'ID de l'utilisateur à rechercher :");
+                int userId = sc.nextInt();
+                sqlSelect = "SELECT id, nom, prenom, email FROM utilisateurs WHERE id = ?";
+                pstmt = connect.connexion.prepareStatement(sqlSelect);
+                pstmt.setInt(1, userId);
+            } else if (choixRecherche == 2) {
+                System.out.println("Entrez l'Email de l'utilisateur à rechercher :");
+                String email = sc.nextLine();
+                sqlSelect = "SELECT id, nom, prenom, email FROM utilisateurs WHERE email = ?";
+                pstmt = connect.connexion.prepareStatement(sqlSelect);
+                pstmt.setString(1, email);
+            } else if (choixRecherche == 3) {
+                System.out.println("Entrez le Nom de l'utilisateur à rechercher :");
+                String nom = sc.nextLine();
+                sqlSelect = "SELECT id, nom, prenom, email FROM utilisateurs WHERE nom = ?";
+                pstmt = connect.connexion.prepareStatement(sqlSelect);
+                pstmt.setString(1, nom);
+            } else {
+                System.out.println("Choix invalide");
+                return;
+            }
+
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                System.out.println("Utilisateur trouvé :");
+                System.out.println("ID : " + rs.getInt("id"));
+                System.out.println("Prénom : " + rs.getString("prenom"));
+                System.out.println("Nom : " + rs.getString("nom"));
+                System.out.println("Email : " + rs.getString("email"));
+            } else {
+                System.out.println("Aucun utilisateur trouvé avec ce critère.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL : " + e.getMessage());
+        }
+    }
+// Méthode pour afficher la date de création et la date de la dernière mise à jour de l'utilisateur
+public void showDates(Connexion connect, Scanner sc) {
+    System.out.println("Entrez l'ID de l'utilisateur pour afficher ses dates :");
+    int userId = sc.nextInt();
+    sc.nextLine(); // Consommer le retour à la ligne
+
+    // Requête SQL pour récupérer les dates de création et de mise à jour
+    String sqlSelect = "SELECT createdAt, updatedAt FROM utilisateurs WHERE id = ?";
+    try {
+        PreparedStatement pstmt = connect.connexion.prepareStatement(sqlSelect);
+        pstmt.setInt(1, userId);
+        
+        ResultSet rs = pstmt.executeQuery();
+        
+        if (rs.next()) {
+            // Récupération des dates
+            String createdAt = rs.getString("createdAt");
+            String updatedAt = rs.getString("updatedAt");
+
+            // Affichage des résultats
+            System.out.println("Date de création de l'utilisateur (ID " + userId + ") : " + createdAt);
+            System.out.println("Dernière mise à jour de l'utilisateur (ID " + userId + ") : " + updatedAt);
+        } else {
+            System.out.println("Aucun utilisateur trouvé avec cet ID.");
+        }
+        
+        rs.close();
+        pstmt.close();
+    } catch (SQLException e) {
+        System.err.println("Erreur SQL : " + e.getMessage());
+    }
+}
+
+}
+
+
