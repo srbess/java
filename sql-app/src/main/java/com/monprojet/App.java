@@ -1,10 +1,9 @@
-
 package com.monprojet;
 import java.util.Scanner;
 
 public class App {
     public static void main(String[] args) {
-        System.out.println("Hello World !");
+        System.out.println("Bienvenue dans votre application de gestion d'utilisateurs JAVA !");
 
 
         Connexion connexion = new Connexion();
@@ -20,7 +19,7 @@ public class App {
                 System.out.println("2 - Supprimer un utilisateur avec son ID");
                 System.out.println("3 - Lister les utilisateurs");
                 System.out.println("4 - Modifier un utilisateur");
-                System.out.println("5 - Rechercher un utilisateur par ID"); // Ajout de l'option de recherche
+                System.out.println("5 - Rechercher un utilisateur"); // Ajout de l'option de recherche
                 System.out.println("0 - quitter");
                 choix = sc.nextInt();
 

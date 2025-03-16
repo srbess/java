@@ -145,26 +145,53 @@ public class GestionUtilisateur {
 
     // Méthode de recherche de l'utilisateur par ID
     public void search(Connexion connect, Scanner sc) {
-        System.out.println("Entrez l'ID de l'utilisateur à rechercher :");
-        int userId = sc.nextInt();
+    System.out.println("Voulez-vous rechercher par ID, Email ou Nom ?");
+    System.out.println("1 - Par ID");
+    System.out.println("2 - Par Email");
+    System.out.println("3 - Par Nom");
+    int choixRecherche = sc.nextInt();
+    sc.nextLine();  // Consomme le retour à la ligne
 
-        String sqlSelect = "SELECT id, prenom, nom, email FROM utilisateurs WHERE id = ?";
-        try (PreparedStatement pstmt = connect.connexion.prepareStatement(sqlSelect)) {
+    String sqlSelect = "";
+    PreparedStatement pstmt = null;
+
+    try {
+        if (choixRecherche == 1) {
+            System.out.println("Entrez l'ID de l'utilisateur à rechercher :");
+            int userId = sc.nextInt();
+            sqlSelect = "SELECT id, prenom, nom, email FROM utilisateurs WHERE id = ?";
+            pstmt = connect.connexion.prepareStatement(sqlSelect);
             pstmt.setInt(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                // Affichage des informations de l'utilisateur
-                System.out.println("Utilisateur trouvé :");
-                System.out.println("ID : " + rs.getInt("id"));
-                System.out.println("Prénom : " + rs.getString("prenom"));
-                System.out.println("Nom : " + rs.getString("nom"));
-                System.out.println("Email : " + rs.getString("email"));
-            } else {
-                System.out.println("Aucun utilisateur trouvé avec cet ID.");
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur SQL : " + e.getMessage());
+        } else if (choixRecherche == 2) {
+            System.out.println("Entrez l'Email de l'utilisateur à rechercher :");
+            String email = sc.nextLine();
+            sqlSelect = "SELECT id, prenom, nom, email FROM utilisateurs WHERE email = ?";
+            pstmt = connect.connexion.prepareStatement(sqlSelect);
+            pstmt.setString(1, email);
+        } else if (choixRecherche == 3) {
+            System.out.println("Entrez le Nom de l'utilisateur à rechercher :");
+            String nom = sc.nextLine();
+            sqlSelect = "SELECT id, prenom, nom, email FROM utilisateurs WHERE nom = ?";
+            pstmt = connect.connexion.prepareStatement(sqlSelect);
+            pstmt.setString(1, nom);
+        } else {
+            System.out.println("Choix invalide");
+            return;
         }
+
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            System.out.println("Utilisateur trouvé :");
+            System.out.println("ID : " + rs.getInt("id"));
+            System.out.println("Prénom : " + rs.getString("prenom"));
+            System.out.println("Nom : " + rs.getString("nom"));
+            System.out.println("Email : " + rs.getString("email"));
+        } else {
+            System.out.println("Aucun utilisateur trouvé avec ce critère.");
+        }
+    } catch (SQLException e) {
+        System.err.println("Erreur SQL : " + e.getMessage());
     }
+}
+
 }
